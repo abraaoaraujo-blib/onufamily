@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>UNO Efeitos</title>
+  <title>UNO Efeitos Organizado</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes pulse {
@@ -38,32 +38,37 @@
 </head>
 <body class="bg-green-600 flex flex-col min-h-screen items-center justify-between p-4">
   
-  <!-- Aviso de turno -->
-  <div id="turn-indicator" class="text-white text-2xl font-bold mb-4"></div>
+  <!-- Jogador 1 -->
+  <div id="player1" class="flex flex-wrap justify-center mt-4"></div>
+  <div class="text-white text-lg font-semibold mb-4">Jogador 1</div>
 
-  <!-- Monte de compra e botão UNO -->
-  <div class="relative">
-    <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer">Compra</div>
-    <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
+  <!-- Centro: Pilhas e indicador -->
+  <div class="flex flex-col items-center mt-4 mb-4">
+    <div id="turn-indicator" class="text-white text-2xl font-bold mb-4"></div>
+    <div class="flex items-center justify-center gap-8">
+      <!-- Monte de compra -->
+      <div class="relative">
+        <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer">Compra</div>
+        <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
+      </div>
+
+      <!-- Pilha de descarte -->
+      <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center"></div>
+    </div>
+
+    <!-- Escolha de cor -->
+    <div id="color-chooser" class="hidden mt-4 fade-in">
+      <span class="text-white">Escolha a cor:</span>
+      <button class="color-btn bg-red-500 text-white px-2 py-1 m-1" data-color="red">Vermelho</button>
+      <button class="color-btn bg-blue-500 text-white px-2 py-1 m-1" data-color="blue">Azul</button>
+      <button class="color-btn bg-green-500 text-white px-2 py-1 m-1" data-color="green">Verde</button>
+      <button class="color-btn bg-yellow-500 text-black px-2 py-1 m-1" data-color="yellow">Amarelo</button>
+    </div>
   </div>
 
-  <!-- Pilha de descarte -->
-  <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mt-4"></div>
-
-  <!-- Escolha de cor -->
-  <div id="color-chooser" class="hidden mt-4 fade-in">
-    <span class="text-white">Escolha a cor:</span>
-    <button class="color-btn bg-red-500 text-white px-2 py-1 m-1" data-color="red">Vermelho</button>
-    <button class="color-btn bg-blue-500 text-white px-2 py-1 m-1" data-color="blue">Azul</button>
-    <button class="color-btn bg-green-500 text-white px-2 py-1 m-1" data-color="green">Verde</button>
-    <button class="color-btn bg-yellow-500 text-black px-2 py-1 m-1" data-color="yellow">Amarelo</button>
-  </div>
-
-  <!-- Mão do Jogador 1 -->
-  <div id="player1" class="flex flex-wrap justify-center mt-8"></div>
-
-  <!-- Mão do Jogador 2 -->
-  <div id="player2" class="flex flex-wrap justify-center mt-8"></div>
+  <!-- Jogador 2 -->
+  <div class="text-white text-lg font-semibold mt-4">Jogador 2</div>
+  <div id="player2" class="flex flex-wrap justify-center mb-4"></div>
 
   <audio id="sound-play" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
   <audio id="sound-draw" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
@@ -233,21 +238,4 @@
       btn.onclick = () => {
         document.getElementById("sound-color").play();
         const chosenColor = btn.dataset.color;
-        const currentCard = JSON.parse(discardPile.dataset.card);
-        currentCard.color = chosenColor;
-        discardPile.dataset.card = JSON.stringify(currentCard);
-        discardPile.style.backgroundColor = chosenColor;
-        document.getElementById("color-chooser").classList.add("hidden");
-        endTurn();
-      };
-    });
-
-    const firstCard = deck.pop();
-    discardPile.textContent = firstCard.number;
-    discardPile.style.backgroundColor = firstCard.color;
-    discardPile.dataset.card = JSON.stringify(firstCard);
-
-    renderHands();
-  </script>
-</body>
-</html>
+        const curren
