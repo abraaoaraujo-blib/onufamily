@@ -41,7 +41,7 @@
   <!-- Aviso de turno -->
   <div id="turn-indicator" class="text-white text-2xl font-bold mb-4"></div>
 
-  <!-- Monte de compra e botÃ£o UNO -->
+  <!-- Monte de compra e botão UNO -->
   <div class="relative">
     <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer">Compra</div>
     <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
@@ -59,10 +59,10 @@
     <button class="color-btn bg-yellow-500 text-black px-2 py-1 m-1" data-color="yellow">Amarelo</button>
   </div>
 
-  <!-- MÃ£o do Jogador 1 -->
+  <!-- Mão do Jogador 1 -->
   <div id="player1" class="flex flex-wrap justify-center mt-8"></div>
 
-  <!-- MÃ£o do Jogador 2 -->
+  <!-- Mão do Jogador 2 -->
   <div id="player2" class="flex flex-wrap justify-center mt-8"></div>
 
   <audio id="sound-play" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
@@ -109,7 +109,7 @@
 
       player1.forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500;
+        el.className = `w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500`;
         el.textContent = card.number;
         if (currentPlayer === 1) {
           el.onclick = () => playCard(card, index, player1);
@@ -121,7 +121,7 @@
 
       player2.forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500;
+        el.className = `w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500`;
         el.textContent = card.number;
         if (currentPlayer === 2) {
           el.onclick = () => playCard(card, index, player2);
@@ -131,7 +131,7 @@
         p2.appendChild(el);
       });
 
-      turnIndicator.textContent = Vez do Jogador ${currentPlayer};
+      turnIndicator.textContent = `Vez do Jogador ${currentPlayer}`;
     }
 
     function playCard(card, index, hand) {
@@ -167,7 +167,7 @@
           for (let i = 0; i < 4; i++) {
             opponent.push(deck.pop());
           }
-          alert("O adversÃ¡rio comprou 4 cartas!");
+          alert("O adversário comprou 4 cartas!");
         }
 
         if (hand.length === 1) {
@@ -176,7 +176,7 @@
           unoTimeout = setTimeout(() => {
             if (!unoButton.classList.contains("hidden")) {
               hand.push(deck.pop(), deck.pop());
-              alert("Esqueceu de apertar UNO! VocÃª recebeu 2 cartas.");
+              alert("Esqueceu de apertar UNO! Você recebeu 2 cartas.");
               unoButton.classList.add("hidden");
               unoButton.classList.remove("uno-active");
               renderHands();
@@ -185,7 +185,7 @@
         }
         endTurn();
       } else {
-        alert("Carta invÃ¡lida!");
+        alert("Carta inválida!");
       }
     }
 
@@ -206,7 +206,7 @@
         c.number === '+4'
       );
       if (hasPlayable) {
-        alert("VocÃª ainda tem cartas jogÃ¡veis!");
+        alert("Você ainda tem cartas jogáveis!");
       } else {
         const newCard = deck.pop();
         hand.push(newCard);
