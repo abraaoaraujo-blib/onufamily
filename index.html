@@ -2,8 +2,10 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>UNO Online</title>
+  <title>UNO Multiplayer</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     @keyframes pulse {
       0% { transform: scale(1); }
@@ -13,96 +15,102 @@
     .uno-active {
       animation: pulse 1s infinite;
     }
-    .card {
-      width: 4rem;
-      height: 6rem;
-      border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0.25rem;
+    .special-card {
+      background: linear-gradient(45deg, black, gray);
+      border: 2px solid white;
       color: white;
-      font-weight: bold;
-      cursor: pointer;
     }
   </style>
 </head>
-<body class="bg-green-600 flex flex-col min-h-screen p-4">
+<body class="bg-green-600 flex flex-col min-h-screen items-center justify-between p-4">
 
-  <!-- Jogador 1 -->
-  <div id="player1" class="flex flex-wrap justify-center mb-8"></div>
-
-  <!-- Área central com descarte, compra e botão UNO -->
-  <div class="flex justify-center items-center mb-8 relative">
-    <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer mx-4">
-      Compra
-    </div>
-    <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mx-4"></div>
-    <button id="uno-button" class="absolute right-0 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">
-      UNO!
-    </button>
+  <!-- Entrada de Sala -->
+  <div class="mt-4">
+    <input id="room-id" type="text" placeholder="ID da Sala" class="p-2 rounded">
+    <button id="create-room" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Criar Sala</button>
+    <button id="join-room" class="bg-green-500 text-white px-4 py-2 rounded ml-2">Entrar Sala</button>
   </div>
 
-  <!-- Jogador 2 -->
+  <!-- Monte de compra e botão UNO -->
+  <div class="relative mt-4">
+    <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer hidden">Compra</div>
+    <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
+  </div>
+
+  <!-- Pilha de descarte -->
+  <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mt-4 text-white text-lg font-bold hidden"></div>
+
+  <!-- Mão do Jogador 1 -->
+  <div id="player1" class="flex flex-wrap justify-center mt-8"></div>
+
+  <!-- Mão do Jogador 2 -->
   <div id="player2" class="flex flex-wrap justify-center mt-8"></div>
 
-  <audio id="sound-play" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
-  <audio id="sound-draw" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
-  <audio id="sound-uno" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
-
   <script>
+    // 🔧 Configuração do Firebase (substitua pelos SEUS dados do projeto)
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH_DOMAIN",
+      databaseURL: "SEU_DATABASE_URL",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_STORAGE_BUCKET",
+      messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const colors = ["red", "blue", "green", "yellow"];
-    const deck = [];
-
-    colors.forEach(color => {
-      numbers.forEach(num => {
-        deck.push({ number: num, color });
-      });
-    });
-
-    for (let i = 0; i < 4; i++) {
-      deck.push({ number: '+4', color: 'black' });
-      deck.push({ number: 'Coringa', color: 'wild' });
-    }
-
-    deck.sort(() => Math.random() - 0.5);
-
-    const player1 = [];
-    const player2 = [];
-    const discardPile = document.getElementById("discard-pile");
-    const unoButton = document.getElementById("uno-button");
+    let deck = [];
+    let player1 = [];
+    let player2 = [];
     let currentPlayer = 1;
+    let roomId = null;
 
-    for (let i = 0; i < 7; i++) {
-      player1.push(deck.pop());
-      player2.push(deck.pop());
+    function initDeck() {
+      deck = [];
+      colors.forEach(color => {
+        numbers.forEach(num => {
+          deck.push({ number: num, color });
+        });
+      });
+      for (let i = 0; i < 4; i++) {
+        deck.push({ number: '+4', color: 'black' });
+        deck.push({ number: 'Coringa', color: 'black' });
+      }
+      deck.sort(() => Math.random() - 0.5);
     }
 
-    function renderHands() {
+    function renderHands(data) {
       const p1 = document.getElementById("player1");
       const p2 = document.getElementById("player2");
       p1.innerHTML = "";
       p2.innerHTML = "";
 
-      player1.forEach((card, index) => {
+      (data.player1 || []).forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = `card bg-${card.color}-500`;
+        el.className = `w-16 h-24 rounded-lg flex items-center justify-center m-1 cursor-pointer text-white text-lg font-bold ${
+          card.color !== 'black' ? 'bg-' + card.color + '-500' : 'special-card'
+        }`;
         el.textContent = card.number;
-        if (currentPlayer === 1) {
-          el.onclick = () => playCard(card, index, player1);
+        if (data.currentPlayer === 1) {
+          el.onclick = () => playCard(card, index, 'player1');
         } else {
           el.classList.add("opacity-50");
         }
         p1.appendChild(el);
       });
 
-      player2.forEach((card, index) => {
+      (data.player2 || []).forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = `card bg-${card.color}-500`;
+        el.className = `w-16 h-24 rounded-lg flex items-center justify-center m-1 cursor-pointer text-white text-lg font-bold ${
+          card.color !== 'black' ? 'bg-' + card.color + '-500' : 'special-card'
+        }`;
         el.textContent = card.number;
-        if (currentPlayer === 2) {
-          el.onclick = () => playCard(card, index, player2);
+        if (data.currentPlayer === 2) {
+          el.onclick = () => playCard(card, index, 'player2');
         } else {
           el.classList.add("opacity-50");
         }
@@ -110,67 +118,82 @@
       });
     }
 
-    function playCard(card, index, hand) {
-      const topCard = discardPile.dataset.card ? JSON.parse(discardPile.dataset.card) : null;
-      if (
-        card.number === 'Coringa' ||
-        !topCard ||
-        card.color === topCard.color ||
-        card.number === topCard.number ||
-        card.number === '+4'
-      ) {
-        document.getElementById("sound-play").play();
-        discardPile.textContent = card.number;
-        discardPile.style.backgroundColor = card.color === 'black' ? 'gray' : card.color;
-        discardPile.dataset.card = JSON.stringify(card);
-        hand.splice(index, 1);
-        if (hand.length === 1) {
-          unoButton.classList.remove("hidden");
-          unoButton.classList.add("uno-active");
-          setTimeout(() => {
-            if (!unoButton.classList.contains("hidden")) {
-              hand.push(deck.pop(), deck.pop());
-              unoButton.classList.add("hidden");
-              unoButton.classList.remove("uno-active");
-              renderHands();
-            }
-          }, 5000);
-        }
-        endTurn();
-      } else {
-        alert("Carta inválida!");
+    function updateRoom(data) {
+      db.ref('rooms/' + roomId).set(data);
+    }
+
+    function createRoom() {
+      roomId = document.getElementById('room-id').value;
+      initDeck();
+      player1 = [];
+      player2 = [];
+      for (let i = 0; i < 7; i++) {
+        player1.push(deck.pop());
+        player2.push(deck.pop());
       }
+      const firstCard = deck.pop();
+      const gameState = {
+        player1,
+        player2,
+        deck,
+        discard: firstCard,
+        currentPlayer: 1
+      };
+      updateRoom(gameState);
+      alert("Sala criada!");
+      startGameListeners();
     }
 
-    function endTurn() {
-      unoButton.classList.add("hidden");
-      unoButton.classList.remove("uno-active");
-      currentPlayer = currentPlayer === 1 ? 2 : 1;
-      renderHands();
+    function joinRoom() {
+      roomId = document.getElementById('room-id').value;
+      startGameListeners();
+      alert("Entrou na sala!");
     }
 
-    document.getElementById("draw-pile").onclick = () => {
-      const hand = currentPlayer === 1 ? player1 : player2;
-      const newCard = deck.pop();
-      hand.push(newCard);
-      document.getElementById("sound-draw").play();
-      renderHands();
-      endTurn();
-    };
+    function startGameListeners() {
+      const drawPile = document.getElementById("draw-pile");
+      const discardPile = document.getElementById("discard-pile");
+      drawPile.classList.remove('hidden');
+      discardPile.classList.remove('hidden');
 
-    unoButton.onclick = () => {
-      document.getElementById("sound-uno").play();
-      unoButton.classList.add("hidden");
-      unoButton.classList.remove("uno-active");
-      alert("UNO declarado!");
-    };
+      db.ref('rooms/' + roomId).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
 
-    const firstCard = deck.pop();
-    discardPile.textContent = firstCard.number;
-    discardPile.style.backgroundColor = firstCard.color;
-    discardPile.dataset.card = JSON.stringify(firstCard);
+        // Atualiza descarte
+        discardPile.textContent = data.discard.number;
+        discardPile.className = 'w-24 h-36 rounded-lg flex items-center justify-center mt-4 text-white text-lg font-bold';
+        if (data.discard.color !== 'black') {
+          discardPile.classList.add('bg-' + data.discard.color + '-500');
+        } else {
+          discardPile.classList.add('special-card');
+        }
 
-    renderHands();
+        renderHands(data);
+      });
+    }
+
+    function playCard(card, index, playerKey) {
+      db.ref('rooms/' + roomId).once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (
+          card.number === 'Coringa' ||
+          card.color === data.discard.color ||
+          card.number === data.discard.number ||
+          card.number === '+4'
+        ) {
+          data[playerKey].splice(index, 1);
+          data.discard = card;
+          data.currentPlayer = data.currentPlayer === 1 ? 2 : 1;
+          updateRoom(data);
+        } else {
+          alert("Carta inválida!");
+        }
+      });
+    }
+
+    document.getElementById('create-room').onclick = createRoom;
+    document.getElementById('join-room').onclick = joinRoom;
   </script>
 </body>
 </html>
