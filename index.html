@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <title>UNO Efeitos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    @keyframes flash {
+      0% { background-color: white; }
+      100% { background-color: transparent; }
+    }
+    .animate-zoom {
+      animation: zoom 0.3s ease forwards;
+    }
+    @keyframes zoom {
+      from { transform: scale(1); }
+      to { transform: scale(1.3); }
+    }
+    .flash-effect {
+      animation: flash 0.3s;
+    }
+    .uno-active {
+      animation: pulse 1s infinite;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-green-600 flex flex-col min-h-screen items-center justify-between p-4">
+  
+  <!-- Aviso de turno -->
+  <div id="turn-indicator" class="text-white text-2xl font-bold mb-4"></div>
+
+  <!-- Monte de compra e botÃ£o UNO -->
+  <div class="relative">
+    <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer">Compra</div>
+    <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
+  </div>
+
+  <!-- Pilha de descarte -->
+  <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mt-4"></div>
+
+  <!-- Escolha de cor -->
+  <div id="color-chooser" class="hidden mt-4 fade-in">
+    <span class="text-white">Escolha a cor:</span>
+    <button class="color-btn bg-red-500 text-white px-2 py-1 m-1" data-color="red">Vermelho</button>
+    <button class="color-btn bg-blue-500 text-white px-2 py-1 m-1" data-color="blue">Azul</button>
+    <button class="color-btn bg-green-500 text-white px-2 py-1 m-1" data-color="green">Verde</button>
+    <button class="color-btn bg-yellow-500 text-black px-2 py-1 m-1" data-color="yellow">Amarelo</button>
+  </div>
+
+  <!-- MÃ£o do Jogador 1 -->
+  <div id="player1" class="flex flex-wrap justify-center mt-8"></div>
+
+  <!-- MÃ£o do Jogador 2 -->
+  <div id="player2" class="flex flex-wrap justify-center mt-8"></div>
+
+  <audio id="sound-play" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+  <audio id="sound-draw" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+  <audio id="sound-uno" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+  <audio id="sound-color" src="https://www.soundjay.com/buttons/sounds/button-09.mp3"></audio>
+
+  <script>
+    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const colors = ["red", "blue", "green", "yellow"];
+    const deck = [];
+
+    colors.forEach(color => {
+      numbers.forEach(num => {
+        deck.push({ number: num, color });
+      });
+    });
+
+    for (let i = 0; i < 4; i++) {
+      deck.push({ number: '+4', color: 'black' });
+      deck.push({ number: 'Coringa', color: 'wild' });
+    }
+
+    deck.sort(() => Math.random() - 0.5);
+
+    const player1 = [];
+    const player2 = [];
+    const discardPile = document.getElementById("discard-pile");
+    const unoButton = document.getElementById("uno-button");
+    const turnIndicator = document.getElementById("turn-indicator");
+    let currentPlayer = 1;
+    let unoTimeout;
+
+    for (let i = 0; i < 7; i++) {
+      player1.push(deck.pop());
+      player2.push(deck.pop());
+    }
+
+    function renderHands() {
+      const p1 = document.getElementById("player1");
+      const p2 = document.getElementById("player2");
+      p1.innerHTML = "";
+      p2.innerHTML = "";
+
+      player1.forEach((card, index) => {
+        const el = document.createElement("div");
+        el.className = w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500;
+        el.textContent = card.number;
+        if (currentPlayer === 1) {
+          el.onclick = () => playCard(card, index, player1);
+        } else {
+          el.classList.add("opacity-50");
+        }
+        p1.appendChild(el);
+      });
+
+      player2.forEach((card, index) => {
+        const el = document.createElement("div");
+        el.className = w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer bg-${card.color}-500;
+        el.textContent = card.number;
+        if (currentPlayer === 2) {
+          el.onclick = () => playCard(card, index, player2);
+        } else {
+          el.classList.add("opacity-50");
+        }
+        p2.appendChild(el);
+      });
+
+      turnIndicator.textContent = Vez do Jogador ${currentPlayer};
+    }
+
+    function playCard(card, index, hand) {
+      const topCard = discardPile.dataset.card ? JSON.parse(discardPile.dataset.card) : null;
+      if (
+        card.number === 'Coringa' || 
+        !topCard || 
+        card.color === topCard.color || 
+        card.number === topCard.number || 
+        card.number === '+4'
+      ) {
+        document.getElementById("sound-play").play();
+
+        if (card.number === 'Coringa') {
+          document.getElementById("color-chooser").classList.remove("hidden");
+          discardPile.textContent = card.number;
+          discardPile.style.backgroundColor = 'gray';
+          discardPile.dataset.card = JSON.stringify(card);
+          hand.splice(index, 1);
+          renderHands();
+          return;
+        }
+
+        discardPile.classList.add("animate-zoom");
+        setTimeout(() => discardPile.classList.remove("animate-zoom"), 300);
+        discardPile.textContent = card.number;
+        discardPile.style.backgroundColor = card.color === 'black' ? 'gray' : card.color;
+        discardPile.dataset.card = JSON.stringify(card);
+        hand.splice(index, 1);
+
+        if (card.number === '+4') {
+          const opponent = currentPlayer === 1 ? player2 : player1;
+          for (let i = 0; i < 4; i++) {
+            opponent.push(deck.pop());
+          }
+          alert("O adversÃ¡rio comprou 4 cartas!");
+        }
+
+        if (hand.length === 1) {
+          unoButton.classList.remove("hidden");
+          unoButton.classList.add("uno-active");
+          unoTimeout = setTimeout(() => {
+            if (!unoButton.classList.contains("hidden")) {
+              hand.push(deck.pop(), deck.pop());
+              alert("Esqueceu de apertar UNO! VocÃª recebeu 2 cartas.");
+              unoButton.classList.add("hidden");
+              unoButton.classList.remove("uno-active");
+              renderHands();
+            }
+          }, 5000);
+        }
+        endTurn();
+      } else {
+        alert("Carta invÃ¡lida!");
+      }
+    }
+
+    function endTurn() {
+      unoButton.classList.add("hidden");
+      unoButton.classList.remove("uno-active");
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      renderHands();
+    }
+
+    document.getElementById("draw-pile").onclick = () => {
+      const hand = currentPlayer === 1 ? player1 : player2;
+      const topCard = discardPile.dataset.card ? JSON.parse(discardPile.dataset.card) : null;
+      const hasPlayable = hand.some(c =>
+        c.number === 'Coringa' ||
+        c.color === topCard.color ||
+        c.number === topCard.number ||
+        c.number === '+4'
+      );
+      if (hasPlayable) {
+        alert("VocÃª ainda tem cartas jogÃ¡veis!");
+      } else {
+        const newCard = deck.pop();
+        hand.push(newCard);
+        document.getElementById("sound-draw").play();
+        renderHands();
+        const handEl = currentPlayer === 1 ? document.getElementById("player1") : document.getElementById("player2");
+        handEl.lastChild.classList.add("flash-effect");
+        setTimeout(() => handEl.lastChild.classList.remove("flash-effect"), 300);
+        endTurn();
+      }
+    };
+
+    unoButton.onclick = () => {
+      clearTimeout(unoTimeout);
+      document.getElementById("sound-uno").play();
+      unoButton.classList.add("hidden");
+      unoButton.classList.remove("uno-active");
+      alert("UNO declarado!");
+    };
+
+    document.querySelectorAll('.color-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.getElementById("sound-color").play();
+        const chosenColor = btn.dataset.color;
+        const currentCard = JSON.parse(discardPile.dataset.card);
+        currentCard.color = chosenColor;
+        discardPile.dataset.card = JSON.stringify(currentCard);
+        discardPile.style.backgroundColor = chosenColor;
+        document.getElementById("color-chooser").classList.add("hidden");
+        endTurn();
+      };
+    });
+
+    const firstCard = deck.pop();
+    discardPile.textContent = firstCard.number;
+    discardPile.style.backgroundColor = firstCard.color;
+    discardPile.dataset.card = JSON.stringify(firstCard);
+
+    renderHands();
+  </script>
+</body>
+</html>
