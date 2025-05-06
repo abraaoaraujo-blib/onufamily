@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <title>UNO Efeitos Organizado</title>
+  <title>UNO Online</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes pulse {
@@ -10,70 +10,45 @@
       50% { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
-    @keyframes flash {
-      0% { background-color: white; }
-      100% { background-color: transparent; }
-    }
-    .animate-zoom {
-      animation: zoom 0.3s ease forwards;
-    }
-    @keyframes zoom {
-      from { transform: scale(1); }
-      to { transform: scale(1.3); }
-    }
-    .flash-effect {
-      animation: flash 0.3s;
-    }
     .uno-active {
       animation: pulse 1s infinite;
     }
-    .fade-in {
-      animation: fadeIn 0.5s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .card {
+      width: 4rem;
+      height: 6rem;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.25rem;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="bg-green-600 flex flex-col min-h-screen items-center justify-between p-4">
-  
+<body class="bg-green-600 flex flex-col min-h-screen p-4">
+
   <!-- Jogador 1 -->
-  <div id="player1" class="flex flex-wrap justify-center mt-4"></div>
-  <div class="text-white text-lg font-semibold mb-4">Jogador 1</div>
+  <div id="player1" class="flex flex-wrap justify-center mb-8"></div>
 
-  <!-- Centro: Pilhas e indicador -->
-  <div class="flex flex-col items-center mt-4 mb-4">
-    <div id="turn-indicator" class="text-white text-2xl font-bold mb-4"></div>
-    <div class="flex items-center justify-center gap-8">
-      <!-- Monte de compra -->
-      <div class="relative">
-        <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer">Compra</div>
-        <button id="uno-button" class="absolute top-0 left-28 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">UNO!</button>
-      </div>
-
-      <!-- Pilha de descarte -->
-      <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center"></div>
+  <!-- Área central com descarte, compra e botão UNO -->
+  <div class="flex justify-center items-center mb-8 relative">
+    <div id="draw-pile" class="w-24 h-36 bg-blue-700 text-white rounded-lg flex items-center justify-center cursor-pointer mx-4">
+      Compra
     </div>
-
-    <!-- Escolha de cor -->
-    <div id="color-chooser" class="hidden mt-4 fade-in">
-      <span class="text-white">Escolha a cor:</span>
-      <button class="color-btn bg-red-500 text-white px-2 py-1 m-1" data-color="red">Vermelho</button>
-      <button class="color-btn bg-blue-500 text-white px-2 py-1 m-1" data-color="blue">Azul</button>
-      <button class="color-btn bg-green-500 text-white px-2 py-1 m-1" data-color="green">Verde</button>
-      <button class="color-btn bg-yellow-500 text-black px-2 py-1 m-1" data-color="yellow">Amarelo</button>
-    </div>
+    <div id="discard-pile" class="w-24 h-36 border-2 border-gray-300 rounded-lg flex items-center justify-center mx-4"></div>
+    <button id="uno-button" class="absolute right-0 w-24 h-36 bg-yellow-400 rounded-lg text-black font-bold hidden">
+      UNO!
+    </button>
   </div>
 
   <!-- Jogador 2 -->
-  <div class="text-white text-lg font-semibold mt-4">Jogador 2</div>
-  <div id="player2" class="flex flex-wrap justify-center mb-4"></div>
+  <div id="player2" class="flex flex-wrap justify-center mt-8"></div>
 
   <audio id="sound-play" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
   <audio id="sound-draw" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
   <audio id="sound-uno" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
-  <audio id="sound-color" src="https://www.soundjay.com/buttons/sounds/button-09.mp3"></audio>
 
   <script>
     const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -97,9 +72,7 @@
     const player2 = [];
     const discardPile = document.getElementById("discard-pile");
     const unoButton = document.getElementById("uno-button");
-    const turnIndicator = document.getElementById("turn-indicator");
     let currentPlayer = 1;
-    let unoTimeout;
 
     for (let i = 0; i < 7; i++) {
       player1.push(deck.pop());
@@ -114,9 +87,8 @@
 
       player1.forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = `w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer`;
+        el.className = `card bg-${card.color}-500`;
         el.textContent = card.number;
-        el.style.backgroundColor = card.color === 'wild' ? 'gray' : card.color;
         if (currentPlayer === 1) {
           el.onclick = () => playCard(card, index, player1);
         } else {
@@ -127,9 +99,8 @@
 
       player2.forEach((card, index) => {
         const el = document.createElement("div");
-        el.className = `w-16 h-24 rounded-lg text-white flex items-center justify-center m-1 cursor-pointer`;
+        el.className = `card bg-${card.color}-500`;
         el.textContent = card.number;
-        el.style.backgroundColor = card.color === 'wild' ? 'gray' : card.color;
         if (currentPlayer === 2) {
           el.onclick = () => playCard(card, index, player2);
         } else {
@@ -137,53 +108,28 @@
         }
         p2.appendChild(el);
       });
-
-      turnIndicator.textContent = `Vez do Jogador ${currentPlayer}`;
     }
 
     function playCard(card, index, hand) {
       const topCard = discardPile.dataset.card ? JSON.parse(discardPile.dataset.card) : null;
       if (
-        card.number === 'Coringa' || 
-        !topCard || 
-        card.color === topCard.color || 
-        card.number === topCard.number || 
+        card.number === 'Coringa' ||
+        !topCard ||
+        card.color === topCard.color ||
+        card.number === topCard.number ||
         card.number === '+4'
       ) {
         document.getElementById("sound-play").play();
-
-        if (card.number === 'Coringa') {
-          document.getElementById("color-chooser").classList.remove("hidden");
-          discardPile.textContent = card.number;
-          discardPile.style.backgroundColor = 'gray';
-          discardPile.dataset.card = JSON.stringify(card);
-          hand.splice(index, 1);
-          renderHands();
-          return;
-        }
-
-        discardPile.classList.add("animate-zoom");
-        setTimeout(() => discardPile.classList.remove("animate-zoom"), 300);
         discardPile.textContent = card.number;
         discardPile.style.backgroundColor = card.color === 'black' ? 'gray' : card.color;
         discardPile.dataset.card = JSON.stringify(card);
         hand.splice(index, 1);
-
-        if (card.number === '+4') {
-          const opponent = currentPlayer === 1 ? player2 : player1;
-          for (let i = 0; i < 4; i++) {
-            opponent.push(deck.pop());
-          }
-          alert("O adversário comprou 4 cartas!");
-        }
-
         if (hand.length === 1) {
           unoButton.classList.remove("hidden");
           unoButton.classList.add("uno-active");
-          unoTimeout = setTimeout(() => {
+          setTimeout(() => {
             if (!unoButton.classList.contains("hidden")) {
               hand.push(deck.pop(), deck.pop());
-              alert("Esqueceu de apertar UNO! Você recebeu 2 cartas.");
               unoButton.classList.add("hidden");
               unoButton.classList.remove("uno-active");
               renderHands();
@@ -205,37 +151,26 @@
 
     document.getElementById("draw-pile").onclick = () => {
       const hand = currentPlayer === 1 ? player1 : player2;
-      const topCard = discardPile.dataset.card ? JSON.parse(discardPile.dataset.card) : null;
-      const hasPlayable = hand.some(c =>
-        c.number === 'Coringa' ||
-        c.color === topCard.color ||
-        c.number === topCard.number ||
-        c.number === '+4'
-      );
-      if (hasPlayable) {
-        alert("Você ainda tem cartas jogáveis!");
-      } else {
-        const newCard = deck.pop();
-        hand.push(newCard);
-        document.getElementById("sound-draw").play();
-        renderHands();
-        const handEl = currentPlayer === 1 ? document.getElementById("player1") : document.getElementById("player2");
-        handEl.lastChild.classList.add("flash-effect");
-        setTimeout(() => handEl.lastChild.classList.remove("flash-effect"), 300);
-        endTurn();
-      }
+      const newCard = deck.pop();
+      hand.push(newCard);
+      document.getElementById("sound-draw").play();
+      renderHands();
+      endTurn();
     };
 
     unoButton.onclick = () => {
-      clearTimeout(unoTimeout);
       document.getElementById("sound-uno").play();
       unoButton.classList.add("hidden");
       unoButton.classList.remove("uno-active");
       alert("UNO declarado!");
     };
 
-    document.querySelectorAll('.color-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.getElementById("sound-color").play();
-        const chosenColor = btn.dataset.color;
-        const curren
+    const firstCard = deck.pop();
+    discardPile.textContent = firstCard.number;
+    discardPile.style.backgroundColor = firstCard.color;
+    discardPile.dataset.card = JSON.stringify(firstCard);
+
+    renderHands();
+  </script>
+</body>
+</html>
